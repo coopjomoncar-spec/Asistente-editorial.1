@@ -772,8 +772,9 @@ function vaciarLista() {
 }
 
 // ══ LLAMADA IA ══
+// ══ LLAMADA IA (CORREGIDA) ══
 async function callAI(prompt) {
-  const res = await fetch('https://TU-BACKEND.vercel.app/api/ai', {
+  const res = await fetch('https://asistente-editorial-1.vercel.app/api/ai', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
