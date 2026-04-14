@@ -773,23 +773,30 @@ function vaciarLista() {
 
 // ══ LLAMADA IA ══
 async function callAI(prompt) {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetch('https://TU-BACKEND.vercel.app/api/ai', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1000,
-      messages: [{ role:'user', content: prompt }]
-    })
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ prompt })
   });
+
   if (!res.ok) {
     let msg = `Error de red (${res.status})`;
-    try { const j = await res.json(); msg = j.error?.message || msg; } catch(_) {}
+    try {
+      const j = await res.json();
+      msg = j.error || j.message || msg;
+    } catch (_) {}
     throw new Error(msg);
   }
+
   const data = await res.json();
-  if (!data.content?.length) throw new Error('Respuesta vacía de la IA');
-  return data.content.map(b => b.text || '').join('');
+
+  if (!data.text) {
+    throw new Error('Respuesta vacía de la IA');
+  }
+
+  return data.text;
 }
 
 // ══ STEP HELPERS ══
