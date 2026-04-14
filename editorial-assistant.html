@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Asistente de Pedidos — Editorial</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #F0F4FF;
+  --white: #FFFFFF;
+  --blue: #2563EB;
+  --blue-light: #EFF4FF;
+  --blue-border: #BFCFFF;
+  --green: #16A34A;
+  --green-light: #DCFCE7;
+  --green-border: #86EFAC;
+  --red: #DC2626;
+  --red-light: #FEE2E2;
+  --red-border: #FCA5A5;
+  --orange: #D97706;
+  --orange-light: #FEF3C7;
+  --orange-border: #FCD34D;
+  --gray: #6B7280;
+  --gray-light: #F3F4F6;
+  --border: #E5E7EB;
+  --text: #111827;
+  --text-soft: #374151;
+  --text-muted: #9CA3AF;
+  --radius: 16px;
+  --shadow: 0 4px 24px rgba(37,99,235,0.08);
+  --shadow-lg: 0 8px 40px rgba(37,99,235,0.14);
+}
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 16px;
+}
+
+/* HEADER */
+.header {
+  background: var(--blue);
+  padding: 1.25rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 2px 12px rgba(37,99,235,0.2);
+}
+.header-icon {
+  width: 48px; height: 48px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem;
+}
+.header-title { color: white; font-size: 1.3rem; font-weight: 800; line-height: 1.2; }
+.header-sub { color: rgba(255,255,255,0.75); font-size: 0.85rem; font-weight: 400; }
+
+/* MAIN */
+.main { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem 5rem; }
+
+/* STEP CARD */
+.step-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+  border: 1.5px solid var(--border);
+  transition: box-shadow 0.2s;
+}
+.step-card.active { border-color: var(--blue-border); box-shadow: var(--shadow-lg); }
+.step-card.done   { border-color: var(--green-border); }
+
+.step-header {
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.step-num {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: var(--gray-light);
+  color: var(--gray);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 1rem;
+  flex-shrink: 0;
+  transition: all 0.3s;
+}
+.step-card.active .step-num { background: var(--blue); color: white; }
+.step-card.done   .step-num { background: var(--green); color: white; font-size: 1.2rem; }
+
+.step-title { font-size: 1.05rem; font-weight: 800; color: var(--text); line-height: 1.3; }
+.step-desc  { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.15rem; font-weight: 400; }
+.step-card.active .step-title { color: var(--blue); }
+.step-card.done   .step-title { color: var(--green); }
+
+.step-body { padding: 0 1.5rem 1.5rem; display: none; }
+.step-card.active .step-body,
+.step-card.done   .step-body { display: block; }
+
+/* UPLOAD AREA */
+.upload-area {
+  border: 2.5px dashed var(--blue-border);
+  border-radius: 12px;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--blue-light);
+}
+.upload-area:hover { border-color: var(--blue); background: #E0EAFF; }
+.upload-area.loaded { border-color: var(--green-border); background: var(--green-light); cursor: default; }
+.upload-area input[type="file"] { display: none; }
+.upload-icon { font-size: 2.5rem; margin-bottom: 0.6rem; }
+.upload-title { font-size: 1rem; font-weight: 700; color: var(--text); }
+.upload-hint  { font-size: 0.82rem; color: var(--text-muted); margin-top: 0.3rem; }
+
+/* TEXTAREA */
+textarea {
+  width: 100%;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.95rem;
+  color: var(--text);
+  background: var(--gray-light);
+  resize: vertical;
+  transition: border-color 0.2s, background 0.2s;
+  line-height: 1.65;
+}
+textarea:focus { outline: none; border-color: var(--blue); background: white; }
+textarea::placeholder { color: var(--text-muted); }
+
+/* BUTTONS */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.8rem;
+  border-radius: 12px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+.btn-big { width: 100%; padding: 1.1rem; font-size: 1.1rem; border-radius: 14px; }
+.btn-blue { background: var(--blue); color: white; box-shadow: 0 4px 14px rgba(37,99,235,0.3); }
+.btn-blue:hover:not(:disabled) { background: #1D4ED8; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(37,99,235,0.4); }
+.btn-blue:disabled { background: #93A8D0; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn-green { background: var(--green); color: white; box-shadow: 0 4px 14px rgba(22,163,74,0.3); }
+.btn-green:hover:not(:disabled) { background: #15803D; transform: translateY(-1px); }
+.btn-green:disabled { background: #86EFAC; color: #14532D; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn-outline { background: white; color: var(--text-soft); border: 2px solid var(--border); }
+.btn-outline:hover { background: var(--gray-light); }
+.btn-danger { background: var(--red-light); color: var(--red); border: 2px solid var(--red-border); }
+.btn-danger:hover { background: #FECACA; }
+
+/* RESULT BLOCKS */
+.result-block { border-radius: 12px; padding: 1.1rem 1.25rem; margin-bottom: 1rem; }
+.result-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 0.4rem; }
+.result-value { font-size: 1rem; font-weight: 600; color: var(--text); }
+.result-blue   { background: var(--blue-light); border: 1.5px solid var(--blue-border); }
+.result-green  { background: var(--green-light); border: 1.5px solid var(--green-border); }
+.result-red    { background: var(--red-light);   border: 1.5px solid var(--red-border);   }
+.result-orange { background: var(--orange-light);border: 1.5px solid var(--orange-border);}
+
+.isbn-pill {
+  display: inline-block;
+  background: #EFF4FF;
+  border: 1.5px solid var(--blue-border);
+  color: var(--blue);
+  border-radius: 8px;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin: 0.2rem;
+  font-family: monospace;
+}
+
+/* RESPONSE AREA */
+.response-area {
+  background: white;
+  border: 2px solid var(--green-border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  font-size: 0.95rem;
+  line-height: 1.75;
+  color: var(--text-soft);
+  min-height: 140px;
+}
+
+/* TABLE */
+.table-wrap { overflow-x: auto; border-radius: 12px; border: 1.5px solid var(--border); }
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+thead { background: var(--blue); color: white; }
+th { padding: 0.85rem 1rem; text-align: left; font-weight: 700; font-size: 0.8rem; letter-spacing: 0.05em; }
+td { padding: 0.85rem 1rem; border-bottom: 1.5px solid var(--border); color: var(--text-soft); vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:nth-child(even) td { background: #F9FAFB; }
+.name-strong { font-weight: 700; color: var(--text); }
+
+/* BADGES */
+.badge { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.3rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 700; }
+.badge-green  { background: var(--green-light); color: var(--green); }
+.badge-red    { background: var(--red-light);   color: var(--red);   }
+.badge-orange { background: var(--orange-light);color: var(--orange);}
+
+/* STATS */
+.stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; margin-bottom: 1.25rem; }
+.stat-box { background: white; border-radius: 12px; padding: 1rem; text-align: center; border: 1.5px solid var(--border); }
+.stat-num   { font-size: 2rem; font-weight: 800; line-height: 1; color: var(--blue); }
+.stat-label { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.3rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* SPINNER */
+.spinner { width: 18px; height: 18px; border: 2.5px solid rgba(255,255,255,0.35); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ALERT */
+.alert { border-radius: 10px; padding: 0.85rem 1rem; font-size: 0.9rem; font-weight: 600; margin-bottom: 0.75rem; display: flex; gap: 0.5rem; align-items: flex-start; line-height: 1.5; }
+.alert-orange { background: var(--orange-light); color: #92400E; border: 1.5px solid var(--orange-border); }
+.alert-red    { background: var(--red-light);    color: #7F1D1D; border: 1.5px solid var(--red-border);    }
+.alert-green  { background: var(--green-light);  color: #14532D; border: 1.5px solid var(--green-border);  }
+
+/* HELP NOTE */
+.help-note { display: flex; gap: 0.6rem; background: #FFFBEB; border: 1.5px solid #FCD34D; border-radius: 10px; padding: 0.75rem 1rem; font-size: 0.85rem; color: #78350F; margin-bottom: 1rem; align-items: flex-start; line-height: 1.5; }
+
+/* DIVIDER */
+.divider { height: 1px; background: var(--border); margin: 1.25rem 0; }
+
+/* ROW */
+.row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem; }
+
+/* SECTION */
+.section-title { font-size: 1.2rem; font-weight: 800; color: var(--text); margin-bottom: 0.25rem; }
+.section-sub   { font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1.25rem; }
+
+/* TOAST */
+#toast {
+  position: fixed; bottom: 2rem; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--text); color: white;
+  padding: 0.85rem 1.75rem; border-radius: 50px;
+  font-size: 0.95rem; font-weight: 600;
+  opacity: 0; transition: all 0.3s; pointer-events: none; z-index: 999;
+  white-space: nowrap; box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+@media (max-width: 600px) {
+  .stats-row { grid-template-columns: repeat(2,1fr); }
+  .main { padding: 1rem 0.75rem 4rem; }
+  .header { padding: 1rem; }
+  .btn-big { font-size: 1rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">📚</div>
+  <div>
+    <div class="header-title">Asistente de Pedidos de Libros</div>
+    <div class="header-sub">Procesa las solicitudes de profesores paso a paso</div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- PASO 1 -->
+  <div class="step-card active" id="card1">
+    <div class="step-header">
+      <div class="step-num" id="snum1">1</div>
+      <div>
+        <div class="step-title">Carga el listado de profesores</div>
+        <div class="step-desc">Archivo CSV o TXT con los profesores vinculados a la editorial</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="help-note">
+        💡 <span>Este listado sirve para saber si el profesor que escribe <strong>tiene derecho a recibir libros gratuitos</strong>. Si no tienes el archivo ahora, puedes saltarte este paso y verificar tú misma manualmente.</span>
+      </div>
+      <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+        <input type="file" id="fileInput" accept=".csv,.txt" onchange="cargarListado(event)">
+        <div id="uploadContent">
+          <div class="upload-icon">📂</div>
+          <div class="upload-title">Haz clic aquí para subir el archivo</div>
+          <div class="upload-hint">Formato CSV o TXT · Debe contener nombres o emails de los profesores</div>
+        </div>
+      </div>
+      <div id="uploadFeedback"></div>
+      <div class="row">
+        <button class="btn btn-outline" onclick="saltarPaso1()">Continuar sin listado →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PASO 2 -->
+  <div class="step-card" id="card2">
+    <div class="step-header">
+      <div class="step-num" id="snum2">2</div>
+      <div>
+        <div class="step-title">Pega el correo del profesor</div>
+        <div class="step-desc">Copia el texto del correo recibido y pégalo aquí abajo</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="help-note">
+        💡 <span>Abre el correo en Outlook, selecciona todo el texto (<strong>Ctrl+A</strong>), cópialo (<strong>Ctrl+C</strong>) y pégalo en el cuadro de abajo (<strong>Ctrl+V</strong>). No hace falta borrar nada.</span>
+      </div>
+      <textarea id="emailInput" rows="10"
+        placeholder="Pega aquí el correo completo. Por ejemplo:
+
+Hola buenos días,
+Soy Carmen López, profesora de Lengua en el Colegio La Salle de Sevilla.
+Me pongo en contacto para solicitar los siguientes libros para mis hijos:
+
+  - ISBN 978-84-680-1234-5 (Lengua 1º ESO)
+  - ISBN 978-84-680-5678-9 (Lengua 2º ESO)
+
+Muchas gracias,
+Carmen"></textarea>
+
+      <div id="analyzeError"></div>
+      <div class="row">
+        <button class="btn btn-blue btn-big" onclick="analizarCorreo()" id="btnAnalizar">
+          ✨ Analizar este correo
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PASO 3 -->
+  <div class="step-card" id="card3">
+    <div class="step-header">
+      <div class="step-num" id="snum3">3</div>
+      <div>
+        <div class="step-title">Revisa la información detectada</div>
+        <div class="step-desc">Comprueba que los datos extraídos son correctos</div>
+      </div>
+    </div>
+    <div class="step-body" id="resultadoBody"></div>
+  </div>
+
+  <!-- PASO 4 -->
+  <div class="step-card" id="card4">
+    <div class="step-header">
+      <div class="step-num" id="snum4">4</div>
+      <div>
+        <div class="step-title">Respuesta lista para enviar</div>
+        <div class="step-desc">Cópiala y pégala directamente en Outlook</div>
+      </div>
+    </div>
+    <div class="step-body" id="respuestaBody"></div>
+  </div>
+
+  <!-- TABLA -->
+  <div style="margin-top:2.5rem;">
+    <div class="section-title">📋 Lista de solicitudes de esta temporada</div>
+    <div class="section-sub">Cada vez que pulses "Guardar en la lista", el profesor aparecerá aquí</div>
+
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-num" id="statTotal">0</div><div class="stat-label">Solicitudes</div></div>
+      <div class="stat-box"><div class="stat-num" id="statOk"    style="color:var(--green)">0</div><div class="stat-label">Verificados</div></div>
+      <div class="stat-box"><div class="stat-num" id="statPend"  style="color:var(--orange)">0</div><div class="stat-label">Pendientes</div></div>
+      <div class="stat-box"><div class="stat-num" id="statBooks" style="color:var(--blue)">0</div><div class="stat-label">Libros</div></div>
+    </div>
+
+    <div id="tableArea">
+      <div style="text-align:center;padding:2.5rem;color:var(--text-muted);background:white;border-radius:12px;border:1.5px solid var(--border);">
+        <div style="font-size:2rem;margin-bottom:0.5rem;">📭</div>
+        <div style="font-weight:700;font-size:1rem;">Aún no hay solicitudes guardadas</div>
+        <div style="font-size:0.85rem;margin-top:0.3rem;">Procesa un correo y pulsa "Guardar en la lista"</div>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:1rem;">
+      <button class="btn btn-outline" onclick="exportarCSV()">⬇️ Descargar como Excel (CSV)</button>
+      <button class="btn btn-danger"  onclick="vaciarLista()">🗑️ Vaciar lista</button>
+    </div>
+  </div>
+
+</div><!-- /main -->
+<div id="toast"></div>
+
+<script>
+// ══ ESTADO ══
+let profesoresList = [];
+let currentData    = null;
+let respuestaText  = '';
+let solicitudes    = [];
+
+// ══ PASO 1: CARGAR LISTADO ══
+function cargarListado(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  if (/\.xlsx?$/i.test(file.name)) {
+    document.getElementById('uploadFeedback').innerHTML =
+      `<div class="alert alert-orange" style="margin-top:0.75rem;">⚠️ Los archivos Excel (.xlsx) no se pueden leer directamente. Guarda el archivo como <strong>CSV</strong> desde Excel: Archivo → Guardar como → CSV UTF-8. Luego súbelo de nuevo.</div>`;
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    const tokens = ev.target.result
+      .split(/[\n\r,;]+/)
+      .map(t => t.trim().toLowerCase().replace(/"/g, ''))
+      .filter(t => t.length > 1);
+    profesoresList = tokens;
+
+    const area = document.getElementById('uploadArea');
+    area.classList.add('loaded');
+    area.onclick = null;
+    document.getElementById('uploadContent').innerHTML = `
+      <div class="upload-icon">✅</div>
+      <div class="upload-title" style="color:var(--green)">Listado cargado correctamente</div>
+      <div class="upload-hint">${escHtml(file.name)} · ${tokens.length} entradas</div>`;
+    document.getElementById('uploadFeedback').innerHTML =
+      `<div class="alert alert-green" style="margin-top:0.75rem;">✔ Perfecto. Los profesores se verificarán automáticamente al analizar cada correo.</div>`;
+
+    markDone(1); markActive(2);
+  };
+  reader.onerror = () => {
+    document.getElementById('uploadFeedback').innerHTML =
+      `<div class="alert alert-red" style="margin-top:0.75rem;">❌ No se pudo leer el archivo. Comprueba que es un CSV válido e inténtalo de nuevo.</div>`;
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function saltarPaso1() {
+  profesoresList = [];
+  markDone(1); markActive(2);
+  toast('Continuando sin listado — tendrás que verificar manualmente');
+}
+
+// ══ PASO 2: ANALIZAR CORREO ══
+async function analizarCorreo() {
+  const emailText = document.getElementById('emailInput').value.trim();
+  if (!emailText) {
+    showError('analyzeError', '⚠️ El cuadro está vacío. Pega primero el texto del correo.');
+    return;
+  }
+  clearEl('analyzeError');
+
+  const btn = document.getElementById('btnAnalizar');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Analizando...';
+
+  try {
+    // ─ 1. Extraer datos ─
+    const raw = await callAI(`Analiza este correo de un profesor que solicita libros a una editorial educativa española.
+Devuelve ÚNICAMENTE un objeto JSON válido. Sin texto adicional, sin backticks, sin markdown.
+Claves requeridas:
+{
+  "nombre": "nombre completo del remitente, o null si no aparece",
+  "nombre_pila": "solo el primer nombre para el saludo, o null",
+  "colegio": "nombre del colegio o instituto, o null",
+  "email_remitente": "dirección de correo electrónico si aparece en el texto, o null",
+  "isbns": ["array con los ISBNs encontrados, conservando guiones si los tienen"]
+}
+Si no hay ISBNs, usa [].
+
+CORREO:
+${emailText}`);
+
+    let datos;
+    try {
+      const clean = raw.replace(/```json|```/g, '').trim();
+      const s = clean.indexOf('{'), e2 = clean.lastIndexOf('}');
+      if (s === -1 || e2 === -1) throw new Error('sin JSON');
+      datos = JSON.parse(clean.slice(s, e2 + 1));
+    } catch(_) {
+      throw new Error('La IA devolvió una respuesta inesperada. Inténtalo de nuevo.');
+    }
+
+    if (!datos.nombre && !datos.colegio && !(datos.isbns && datos.isbns.length)) {
+      throw new Error('No se detectó suficiente información en el correo. Asegúrate de que el texto está pegado correctamente.');
+    }
+
+    currentData = datos;
+
+    // ─ 2. Verificar ─
+    const estado = verificar(datos);
+    currentData._estado = estado;
+
+    // ─ 3. Mostrar resultado ─
+    mostrarResultado(datos, estado);
+    markActive(3);
+
+    // ─ 4. Generar respuesta ─
+    await generarRespuesta(datos, estado);
+    markActive(4);
+
+  } catch(err) {
+    showError('analyzeError', '❌ ' + (err.message || 'Error inesperado. Inténtalo de nuevo.'));
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '✨ Analizar este correo';
+  }
+}
+
+// ══ VERIFICACIÓN ══
+function verificar(datos) {
+  if (!profesoresList.length) return 'sin_listado';
+
+  const email  = (datos.email_remitente || '').toLowerCase().trim();
+  const nombre = (datos.nombre         || '').toLowerCase().trim();
+
+  // Por email (más fiable)
+  if (email.length > 3) {
+    const local = email.split('@')[0];
+    if (profesoresList.some(p => p === email || (local.length > 3 && p.includes(local)))) {
+      return 'verificado';
+    }
+  }
+
+  // Por nombre: necesitamos al menos 2 palabras coincidentes
+  if (nombre.length > 3) {
+    const palabras = nombre.split(/\s+/).filter(p => p.length > 3);
+    const hits = palabras.filter(pal => profesoresList.some(e => e.includes(pal)));
+    if (hits.length >= 2) return 'verificado';
+    if (hits.length === 1 && palabras.length === 1) return 'verificado';
+  }
+
+  return 'no_verificado';
+}
+
+// ══ MOSTRAR RESULTADO ══
+function mostrarResultado(d, estado) {
+  const isbnsHtml = d.isbns && d.isbns.length
+    ? d.isbns.map(i => `<span class="isbn-pill">${escHtml(i)}</span>`).join(' ')
+    : '<span style="color:var(--text-muted);font-style:italic;">No se detectaron ISBNs en este correo</span>';
+
+  const estadoHtml = estado === 'verificado'
+    ? `<div class="result-block result-green"><div class="result-label">Estado en la editorial</div><div class="result-value">✅ Verificado — aparece en el listado</div></div>`
+    : estado === 'no_verificado'
+    ? `<div class="result-block result-red"><div class="result-label">Estado en la editorial</div><div class="result-value">❌ No aparece en el listado — revisa manualmente</div></div>`
+    : `<div class="result-block result-orange"><div class="result-label">Estado en la editorial</div><div class="result-value">⏳ No hay listado cargado — verificación manual</div></div>`;
+
+  document.getElementById('resultadoBody').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+      <div class="result-block result-blue">
+        <div class="result-label">👤 Nombre del profesor/a</div>
+        <div class="result-value">${escHtml(d.nombre || '— No detectado')}</div>
+      </div>
+      <div class="result-block result-blue">
+        <div class="result-label">🏫 Colegio / Centro</div>
+        <div class="result-value">${escHtml(d.colegio || '— No detectado')}</div>
+      </div>
+    </div>
+    ${d.email_remitente ? `
+    <div class="result-block result-blue" style="margin-bottom:1rem;">
+      <div class="result-label">📧 Email del remitente</div>
+      <div class="result-value">${escHtml(d.email_remitente)}</div>
+    </div>` : ''}
+    <div class="result-block result-blue" style="margin-bottom:1rem;">
+      <div class="result-label">📖 ISBNs solicitados (${d.isbns ? d.isbns.length : 0})</div>
+      <div style="margin-top:0.4rem;">${isbnsHtml}</div>
+    </div>
+    ${estadoHtml}
+    <div class="divider"></div>
+    <p style="font-size:0.88rem;color:var(--text-muted);">¿Algo no es correcto? Corrige el correo pegado arriba y pulsa "Analizar" de nuevo.</p>
+  `;
+}
+
+// ══ GENERAR RESPUESTA ══
+async function generarRespuesta(datos, estado) {
+  document.getElementById('respuestaBody').innerHTML = `
+    <div style="text-align:center;padding:1.5rem;color:var(--text-muted);">
+      <span class="spinner" style="border-color:rgba(37,99,235,0.2);border-top-color:var(--blue);width:24px;height:24px;vertical-align:middle;"></span>
+      <span style="margin-left:0.7rem;font-weight:600;">Redactando respuesta personalizada...</span>
+    </div>`;
+
+  const nombreP  = datos.nombre_pila || (datos.nombre ? datos.nombre.split(' ')[0] : null) || 'profesor/a';
+  const colegio  = datos.colegio || 'su centro';
+  const isbnsStr = datos.isbns && datos.isbns.length ? datos.isbns.join(', ') : 'los libros solicitados';
+
+  const instrEstado = estado === 'verificado'
+    ? 'El profesor SÍ está verificado. Confirma que tramitas su pedido y que recibirá los libros en breve.'
+    : estado === 'no_verificado'
+    ? 'El profesor NO aparece en el listado. Pídele amablemente que confirme su vinculación con la editorial (nombre del centro y tipo de contrato) para poder tramitar el pedido.'
+    : 'No se ha podido verificar al profesor. Indícale que has recibido su solicitud y que contactarás con él/ella en breve para confirmar.';
+
+  const prompt = `Eres el asistente de atención a profesores de una editorial educativa española.
+Escribe una respuesta de correo electrónico en español para este profesor.
+
+DATOS:
+- Nombre de pila para el saludo: ${nombreP}
+- Colegio: ${colegio}
+- ISBNs pedidos: ${isbnsStr}
+
+INSTRUCCIÓN: ${instrEstado}
+
+ESTILO:
+- Saluda por el nombre de pila (ej: "Hola Carmen," o "Buenos días, Carmen,")
+- Tono cálido, cercano y profesional. Que parezca escrito por una persona real, no una plantilla.
+- Menciona los ISBNs de forma natural en el texto.
+- Firma: "Un saludo,\nEl equipo de atención al profesorado"
+- Longitud: 4 a 6 líneas. Conciso pero amable.
+- NO uses "Estimado/a" ni fórmulas robóticas.
+
+Devuelve SOLO el texto del correo. Sin asunto, sin etiquetas, sin explicaciones.`;
+
+  try {
+    const respuesta = await callAI(prompt);
+    respuestaText = respuesta.trim();
+
+    document.getElementById('respuestaBody').innerHTML = `
+      <div class="help-note">💡 <span>Lee la respuesta, y si te parece bien pulsa <strong>"Copiar respuesta"</strong> para pegarla en Outlook.</span></div>
+      <div class="response-area">${escHtml(respuestaText).replace(/\n/g, '<br>')}</div>
+      <div class="row">
+        <button class="btn btn-blue" onclick="copiarRespuesta()" id="btnCopiar">📋 Copiar respuesta</button>
+        <button class="btn btn-green" onclick="guardarEnLista()" id="btnGuardar">💾 Guardar en la lista</button>
+        <button class="btn btn-outline" onclick="procesarOtro()">🔄 Procesar otro correo</button>
+      </div>`;
+  } catch(err) {
+    document.getElementById('respuestaBody').innerHTML = `
+      <div class="alert alert-red">❌ No se pudo generar la respuesta: ${escHtml(err.message)}</div>
+      <div class="row"><button class="btn btn-blue" onclick="generarRespuesta(currentData, currentData._estado)">🔄 Intentar de nuevo</button></div>`;
+  }
+}
+
+// ══ COPIAR ══
+function copiarRespuesta() {
+  if (!respuestaText) { toast('No hay respuesta generada todavía'); return; }
+  const fallback = () => {
+    const ta = document.createElement('textarea');
+    ta.value = respuestaText;
+    ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0;';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    flashBtn(); toast('✅ Respuesta copiada — pégala en Outlook con Ctrl+V');
+  };
+  const flashBtn = () => {
+    const btn = document.getElementById('btnCopiar');
+    if (!btn) return;
+    btn.innerHTML = '✅ ¡Copiado!';
+    btn.style.background = 'var(--green)';
+    setTimeout(() => { btn.innerHTML = '📋 Copiar respuesta'; btn.style.background = ''; }, 2200);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(respuestaText)
+      .then(() => { flashBtn(); toast('✅ Respuesta copiada — pégala en Outlook con Ctrl+V'); })
+      .catch(fallback);
+  } else { fallback(); }
+}
+
+// ══ GUARDAR EN LISTA ══
+function guardarEnLista() {
+  if (!currentData) return;
+  const d = currentData;
+  solicitudes.push({
+    nombre:  d.nombre  || '—',
+    colegio: d.colegio || '—',
+    email:   d.email_remitente || '—',
+    isbns:   Array.isArray(d.isbns) ? [...d.isbns] : [],
+    estado:  d._estado || 'sin_listado',
+    fecha:   new Date().toLocaleDateString('es-ES', { day:'2-digit', month:'2-digit', year:'numeric' })
+  });
+  renderTabla();
+  toast('💾 Guardado en la lista');
+  const btn = document.getElementById('btnGuardar');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '✅ Ya guardado';
+  }
+}
+
+// ══ PROCESAR OTRO ══
+function procesarOtro() {
+  currentData   = null;
+  respuestaText = '';
+  document.getElementById('emailInput').value = '';
+  clearEl('analyzeError');
+  markPending(3); markPending(4);
+  clearEl('resultadoBody'); clearEl('respuestaBody');
+  markActive(2);
+  document.getElementById('card2').scrollIntoView({ behavior:'smooth', block:'start' });
+  toast('Listo para un nuevo correo ✉️');
+}
+
+// ══ TABLA ══
+function renderTabla() {
+  const area = document.getElementById('tableArea');
+  if (!solicitudes.length) {
+    area.innerHTML = `<div style="text-align:center;padding:2.5rem;color:var(--text-muted);background:white;border-radius:12px;border:1.5px solid var(--border);">
+      <div style="font-size:2rem;margin-bottom:0.5rem;">📭</div>
+      <div style="font-weight:700;font-size:1rem;">Aún no hay solicitudes guardadas</div>
+      <div style="font-size:0.85rem;margin-top:0.3rem;">Procesa un correo y pulsa "Guardar en la lista"</div></div>`;
+  } else {
+    const rows = solicitudes.map((s, i) => {
+      const badge = s.estado === 'verificado'
+        ? '<span class="badge badge-green">✅ Verificado</span>'
+        : s.estado === 'no_verificado'
+        ? '<span class="badge badge-red">❌ Sin verificar</span>'
+        : '<span class="badge badge-orange">⏳ Pendiente</span>';
+      const isbns = s.isbns.length
+        ? s.isbns.map(v => `<span class="isbn-pill">${escHtml(v)}</span>`).join(' ')
+        : '<span style="color:var(--text-muted)">—</span>';
+      return `<tr>
+        <td style="color:var(--text-muted);font-size:0.8rem;width:36px;">${i+1}</td>
+        <td class="name-strong">${escHtml(s.nombre)}</td>
+        <td>${escHtml(s.colegio)}</td>
+        <td style="font-size:0.82rem;">${escHtml(s.email)}</td>
+        <td>${isbns}</td>
+        <td>${badge}</td>
+        <td style="font-size:0.82rem;color:var(--text-muted);">${s.fecha}</td>
+        <td><button onclick="eliminarFila(${i})" title="Eliminar esta fila"
+          style="background:none;border:none;cursor:pointer;font-size:1.1rem;padding:0.25rem 0.4rem;border-radius:6px;color:var(--text-muted);"
+          onmouseover="this.style.background='var(--red-light)';this.style.color='var(--red)'"
+          onmouseout="this.style.background='none';this.style.color='var(--text-muted)'">🗑</button></td>
+      </tr>`;
+    }).join('');
+    area.innerHTML = `<div class="table-wrap"><table>
+      <thead><tr><th>#</th><th>Nombre</th><th>Colegio</th><th>Email</th><th>ISBNs solicitados</th><th>Estado</th><th>Fecha</th><th></th></tr></thead>
+      <tbody>${rows}</tbody></table></div>`;
+  }
+
+  const total = solicitudes.length;
+  const ok    = solicitudes.filter(s => s.estado === 'verificado').length;
+  const pend  = solicitudes.filter(s => s.estado !== 'verificado').length;
+  const books = solicitudes.reduce((a, s) => a + s.isbns.length, 0);
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statOk').textContent    = ok;
+  document.getElementById('statPend').textContent  = pend;
+  document.getElementById('statBooks').textContent = books;
+}
+
+function eliminarFila(i) {
+  if (!confirm(`¿Eliminar a "${solicitudes[i].nombre}" de la lista?`)) return;
+  solicitudes.splice(i, 1);
+  renderTabla();
+  toast('Eliminado de la lista');
+}
+
+// ══ EXPORTAR CSV ══
+function exportarCSV() {
+  if (!solicitudes.length) { toast('No hay datos que exportar todavía'); return; }
+  const BOM    = '\uFEFF';
+  const header = 'Nombre,Colegio,Email,ISBNs,Estado,Fecha\n';
+  const rows   = solicitudes.map(s => {
+    const label = s.estado === 'verificado' ? 'Verificado' : s.estado === 'no_verificado' ? 'Sin verificar' : 'Pendiente';
+    return [s.nombre, s.colegio, s.email, s.isbns.join(' | '), label, s.fecha]
+      .map(v => `"${String(v).replace(/"/g,'""')}"`)
+      .join(',');
+  }).join('\n');
+  const blob = new Blob([BOM + header + rows], { type:'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = `pedidos_libros_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast('📥 Archivo descargado');
+}
+
+function vaciarLista() {
+  if (!solicitudes.length) { toast('La lista ya está vacía'); return; }
+  if (!confirm('¿Seguro que quieres borrar toda la lista? No se puede deshacer.')) return;
+  solicitudes = []; renderTabla(); toast('Lista vaciada');
+}
+
+// ══ LLAMADA IA ══
+async function callAI(prompt) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      messages: [{ role:'user', content: prompt }]
+    })
+  });
+  if (!res.ok) {
+    let msg = `Error de red (${res.status})`;
+    try { const j = await res.json(); msg = j.error?.message || msg; } catch(_) {}
+    throw new Error(msg);
+  }
+  const data = await res.json();
+  if (!data.content?.length) throw new Error('Respuesta vacía de la IA');
+  return data.content.map(b => b.text || '').join('');
+}
+
+// ══ STEP HELPERS ══
+function markActive(n) {
+  const c = document.getElementById('card'+n);
+  c.classList.remove('done'); c.classList.add('active');
+  document.getElementById('snum'+n).textContent = n;
+  setTimeout(() => c.scrollIntoView({ behavior:'smooth', block:'nearest' }), 80);
+}
+function markDone(n) {
+  const c = document.getElementById('card'+n);
+  c.classList.remove('active'); c.classList.add('done');
+  document.getElementById('snum'+n).textContent = '✓';
+}
+function markPending(n) {
+  const c = document.getElementById('card'+n);
+  c.classList.remove('active','done');
+  document.getElementById('snum'+n).textContent = n;
+}
+
+// ══ UTILS ══
+function escHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function showError(id, msg) { document.getElementById(id).innerHTML = `<div class="alert alert-red" style="margin-top:0.75rem;">${msg}</div>`; }
+function clearEl(id)        { document.getElementById(id).innerHTML = ''; }
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 2800);
+}
+</script>
+</body>
+</html>
