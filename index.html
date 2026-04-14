@@ -458,18 +458,28 @@ async function analizarCorreo() {
   btn.innerHTML = '<span class="spinner"></span> Analizando...';
 
   try {
-    // ─ 1. Extraer datos ─
     const raw = await callAI(`Analiza este correo de un profesor que solicita libros a una editorial educativa española.
+
 Devuelve ÚNICAMENTE un objeto JSON válido. Sin texto adicional, sin backticks, sin markdown.
+
 Claves requeridas:
 {
   "nombre": "nombre completo del remitente, o null si no aparece",
   "nombre_pila": "solo el primer nombre para el saludo, o null",
   "colegio": "nombre del colegio o instituto, o null",
   "email_remitente": "dirección de correo electrónico si aparece en el texto, o null",
-  "isbns": ["array con los ISBNs encontrados, conservando guiones si los tienen"]
+  "titulos": ["array con los títulos de libros encontrados en el correo"],
+  "respuesta": "correo de respuesta ya redactado en español, natural, amable y profesional"
 }
-Si no hay ISBNs, usa [].
+
+Reglas:
+- Si no aparece un dato, usa null.
+- Si no hay títulos claros, usa [].
+- En "titulos" incluye nombres de libros, materias, manuales o productos solicitados tal como aparezcan en el correo.
+- No inventes títulos.
+- La respuesta debe ser breve, cálida, profesional y parecer escrita por una persona real.
+- No pongas asunto.
+- No pongas explicaciones fuera del JSON.
 
 CORREO:
 ${emailText}`);
@@ -477,19 +487,37 @@ ${emailText}`);
     let datos;
     try {
       const clean = raw.replace(/```json|```/g, '').trim();
-      const s = clean.indexOf('{'), e2 = clean.lastIndexOf('}');
+      const s = clean.indexOf('{');
+      const e2 = clean.lastIndexOf('}');
       if (s === -1 || e2 === -1) throw new Error('sin JSON');
       datos = JSON.parse(clean.slice(s, e2 + 1));
-    } catch(_) {
+    } catch (_) {
       throw new Error('La IA devolvió una respuesta inesperada. Inténtalo de nuevo.');
     }
 
-    if (!datos.nombre && !datos.colegio && !(datos.isbns && datos.isbns.length)) {
+    if (!datos.nombre && !datos.colegio && !(datos.titulos && datos.titulos.length)) {
       throw new Error('No se detectó suficiente información en el correo. Asegúrate de que el texto está pegado correctamente.');
     }
 
     currentData = datos;
 
+    const estado = verificar(datos);
+    currentData._estado = estado;
+
+    mostrarResultado(datos, estado);
+    markActive(3);
+
+    respuestaText = (datos.respuesta || '').trim();
+    mostrarRespuesta();
+    markActive(4);
+
+  } catch (err) {
+    showError('analyzeError', '❌ ' + (err.message || 'Error inesperado. Inténtalo de nuevo.'));
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '✨ Analizar este correo';
+  }
+}
     // ─ 2. Verificar ─
     const estado = verificar(datos);
     currentData._estado = estado;
@@ -499,15 +527,21 @@ ${emailText}`);
     markActive(3);
 
     // ─ 4. Generar respuesta ─
-    await generarRespuesta(datos, estado);
-    markActive(4);
-
-  } catch(err) {
-    showError('analyzeError', '❌ ' + (err.message || 'Error inesperado. Inténtalo de nuevo.'));
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '✨ Analizar este correo';
+    function mostrarRespuesta() {
+  if (!respuestaText) {
+    document.getElementById('respuestaBody').innerHTML = `
+      <div class="alert alert-red">❌ No se pudo generar la respuesta.</div>`;
+    return;
   }
+
+  document.getElementById('respuestaBody').innerHTML = `
+    <div class="help-note">💡 <span>Lee la respuesta, y si te parece bien pulsa <strong>"Copiar respuesta"</strong> para pegarla en Outlook.</span></div>
+    <div class="response-area">${escHtml(respuestaText).replace(/\n/g, '<br>')}</div>
+    <div class="row">
+      <button class="btn btn-blue" onclick="copiarRespuesta()" id="btnCopiar">📋 Copiar respuesta</button>
+      <button class="btn btn-green" onclick="guardarEnLista()" id="btnGuardar">💾 Guardar en la lista</button>
+      <button class="btn btn-outline" onclick="procesarOtro()">🔄 Procesar otro correo</button>
+    </div>`;
 }
 
 // ══ VERIFICACIÓN ══
@@ -538,9 +572,9 @@ function verificar(datos) {
 
 // ══ MOSTRAR RESULTADO ══
 function mostrarResultado(d, estado) {
-  const isbnsHtml = d.isbns && d.isbns.length
-    ? d.isbns.map(i => `<span class="isbn-pill">${escHtml(i)}</span>`).join(' ')
-    : '<span style="color:var(--text-muted);font-style:italic;">No se detectaron ISBNs en este correo</span>';
+  const titulosHtml = d.titulos && d.titulos.length
+  ? d.titulos.map(t => `<span class="isbn-pill">${escHtml(t)}</span>`).join(' ')
+  : '<span style="color:var(--text-muted);font-style:italic;">No se detectaron títulos en este correo</span>';
 
   const estadoHtml = estado === 'verificado'
     ? `<div class="result-block result-green"><div class="result-label">Estado en la editorial</div><div class="result-value">✅ Verificado — aparece en el listado</div></div>`
@@ -565,8 +599,8 @@ function mostrarResultado(d, estado) {
       <div class="result-value">${escHtml(d.email_remitente)}</div>
     </div>` : ''}
     <div class="result-block result-blue" style="margin-bottom:1rem;">
-      <div class="result-label">📖 ISBNs solicitados (${d.isbns ? d.isbns.length : 0})</div>
-      <div style="margin-top:0.4rem;">${isbnsHtml}</div>
+      <div class="result-label">📖 Títulos solicitados (${d.titulos ? d.titulos.length : 0})</div>
+<div style="margin-top:0.4rem;">${titulosHtml}</div>
     </div>
     ${estadoHtml}
     <div class="divider"></div>
@@ -665,7 +699,7 @@ function guardarEnLista() {
     nombre:  d.nombre  || '—',
     colegio: d.colegio || '—',
     email:   d.email_remitente || '—',
-    isbns:   Array.isArray(d.isbns) ? [...d.isbns] : [],
+    titulos: Array.isArray(d.titulos) ? [...d.titulos] : [],
     estado:  d._estado || 'sin_listado',
     fecha:   new Date().toLocaleDateString('es-ES', { day:'2-digit', month:'2-digit', year:'numeric' })
   });
@@ -706,15 +740,15 @@ function renderTabla() {
         : s.estado === 'no_verificado'
         ? '<span class="badge badge-red">❌ Sin verificar</span>'
         : '<span class="badge badge-orange">⏳ Pendiente</span>';
-      const isbns = s.isbns.length
-        ? s.isbns.map(v => `<span class="isbn-pill">${escHtml(v)}</span>`).join(' ')
-        : '<span style="color:var(--text-muted)">—</span>';
+      const titulos = s.titulos.length
+  ? s.titulos.map(v => `<span class="isbn-pill">${escHtml(v)}</span>`).join(' ')
+  : '<span style="color:var(--text-muted)">—</span>';
       return `<tr>
         <td style="color:var(--text-muted);font-size:0.8rem;width:36px;">${i+1}</td>
         <td class="name-strong">${escHtml(s.nombre)}</td>
         <td>${escHtml(s.colegio)}</td>
         <td style="font-size:0.82rem;">${escHtml(s.email)}</td>
-        <td>${isbns}</td>
+        <td>${titulos}</td>
         <td>${badge}</td>
         <td style="font-size:0.82rem;color:var(--text-muted);">${s.fecha}</td>
         <td><button onclick="eliminarFila(${i})" title="Eliminar esta fila"
@@ -724,14 +758,14 @@ function renderTabla() {
       </tr>`;
     }).join('');
     area.innerHTML = `<div class="table-wrap"><table>
-      <thead><tr><th>#</th><th>Nombre</th><th>Colegio</th><th>Email</th><th>ISBNs solicitados</th><th>Estado</th><th>Fecha</th><th></th></tr></thead>
+      <thead><tr><th>#</th><th>Nombre</th><th>Colegio</th><th>Email</th><th>Títulos solicitados</th><th>Estado</th><th>Fecha</th><th></th></tr></thead>
       <tbody>${rows}</tbody></table></div>`;
   }
 
   const total = solicitudes.length;
   const ok    = solicitudes.filter(s => s.estado === 'verificado').length;
   const pend  = solicitudes.filter(s => s.estado !== 'verificado').length;
-  const books = solicitudes.reduce((a, s) => a + s.isbns.length, 0);
+ const books = solicitudes.reduce((a, s) => a + s.titulos.length, 0);
   document.getElementById('statTotal').textContent = total;
   document.getElementById('statOk').textContent    = ok;
   document.getElementById('statPend').textContent  = pend;
@@ -752,7 +786,7 @@ function exportarCSV() {
   const header = 'Nombre,Colegio,Email,ISBNs,Estado,Fecha\n';
   const rows   = solicitudes.map(s => {
     const label = s.estado === 'verificado' ? 'Verificado' : s.estado === 'no_verificado' ? 'Sin verificar' : 'Pendiente';
-    return [s.nombre, s.colegio, s.email, s.isbns.join(' | '), label, s.fecha]
+    return [s.nombre, s.colegio, s.email, s.titulos.join(' | '), label, s.fecha]
       .map(v => `"${String(v).replace(/"/g,'""')}"`)
       .join(',');
   }).join('\n');
