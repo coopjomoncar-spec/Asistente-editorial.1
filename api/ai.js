@@ -1,4 +1,5 @@
 export default async function handler(req, res) {
+  // 🔥 CORS (ESTO ARREGLA TU ERROR)
   res.setHeader('Access-Control-Allow-Origin', 'https://coopjomoncar-spec.github.io');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
